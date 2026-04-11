@@ -151,7 +151,7 @@ function GolferRow({
   const inactive = golfer.is_cut || golfer.is_withdrawn
   const rounds = golfer.round_scores_display ?? []
   const paddedRounds = [...rounds, ...Array(Math.max(0, TOTAL_ROUNDS - rounds.length)).fill('')]
-  const clickable = Boolean(golfer.player_id) && !inactive
+  const clickable = Boolean(golfer.player_id)
 
   return (
     <div
