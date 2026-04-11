@@ -4,20 +4,17 @@ import type { ScorecardData, HoleData } from '../types'
 const HOLES_FRONT = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const HOLES_BACK = [10, 11, 12, 13, 14, 15, 16, 17, 18]
 
-// Background color that matches the card body — used for double-ring shadow gap
-const CARD_BG = '#111827'
-
 // ── Symbol styles ─────────────────────────────────────────────────────────────
 
 type SymbolStyle = { ring: string; text: string }
 
 const SCORE_STYLES: Record<string, SymbolStyle> = {
   ALBATROSS: {
-    ring: `border-2 border-yellow-300 rounded-full shadow-[0_0_0_2px_${CARD_BG},0_0_0_4px_#fde047,0_0_0_6px_${CARD_BG},0_0_0_8px_#fde047]`,
+    ring: 'border-2 border-yellow-300 rounded-full shadow-[0_0_0_2px_#111827,0_0_0_4px_#fde047,0_0_0_6px_#111827,0_0_0_8px_#fde047]',
     text: 'text-yellow-200',
   },
   EAGLE: {
-    ring: `border-2 border-yellow-400 rounded-full shadow-[0_0_0_2px_${CARD_BG},0_0_0_4px_#fbbf24]`,
+    ring: 'border-2 border-yellow-400 rounded-full shadow-[0_0_0_2px_#111827,0_0_0_4px_#fbbf24]',
     text: 'text-yellow-300',
   },
   BIRDIE: {
@@ -33,7 +30,7 @@ const SCORE_STYLES: Record<string, SymbolStyle> = {
     text: 'text-blue-400',
   },
   DOUBLE_BOGEY: {
-    ring: `border-2 border-blue-700 shadow-[0_0_0_2px_${CARD_BG},0_0_0_4px_#1d4ed8]`,
+    ring: 'border-2 border-blue-700 shadow-[0_0_0_2px_#111827,0_0_0_4px_#1d4ed8]',
     text: 'text-blue-300',
   },
   TRIPLE_BOGEY: {
@@ -163,9 +160,11 @@ export default function ScorecardPanel({ playerId }: { playerId: string }) {
   const [activeRound, setActiveRound] = useState<number>(1)
 
   useEffect(() => {
+    const controller = new AbortController()
     setLoading(true)
     setError(null)
-    fetch(`/api/scorecard/${playerId}`)
+    setData(null)
+    fetch(`/api/scorecard/${playerId}`, { signal: controller.signal })
       .then(r => r.ok ? r.json() : Promise.reject(`Error ${r.status}`))
       .then((d: ScorecardData) => {
         setData(d)
@@ -173,9 +172,11 @@ export default function ScorecardPanel({ playerId }: { playerId: string }) {
         setLoading(false)
       })
       .catch((e: unknown) => {
+        if ((e as DOMException)?.name === 'AbortError') return
         setError(typeof e === 'string' ? e : 'Scorecard unavailable')
         setLoading(false)
       })
+    return () => controller.abort()
   }, [playerId])
 
   const currentRound = data?.rounds.find(r => r.round === activeRound)
