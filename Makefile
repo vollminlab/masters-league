@@ -1,7 +1,7 @@
 REGISTRY := harbor.vollminlab.com
 PROJECT  := homelab
 IMAGE    := masters-league
-TAG      := v1.0.0
+TAG      := v1.1.0
 FULL     := $(REGISTRY)/$(PROJECT)/$(IMAGE):$(TAG)
 
 NAMESPACE := dmz
