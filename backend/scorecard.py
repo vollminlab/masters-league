@@ -58,14 +58,19 @@ def _parse(player_id: str, data: dict) -> ScorecardData:
     for item in items:
         round_num = item.get("period", 0)
         raw_holes = item.get("linescores", [])
-        started = bool(raw_holes)
+        # A round is started if it has holes OR if ESPN has already given it a to-par displayValue
+        started = bool(raw_holes) or bool(item.get("displayValue"))
 
         if started:
             current_round = round_num
 
         holes: list[HoleScore] = []
         for h in raw_holes:
-            strokes = int(h["value"]) if h.get("value") is not None else None
+            try:
+                raw_val = h.get("value")
+                strokes = int(raw_val) if raw_val not in (None, "--", "") else None
+            except (ValueError, TypeError):
+                strokes = None
             score_type = h.get("scoreType", {}).get("name") if h.get("scoreType") else None
             if score_type is None and strokes is not None:
                 score_type = _diff_to_type(strokes - h.get("par", 4))

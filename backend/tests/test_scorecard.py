@@ -117,3 +117,25 @@ def test_score_type_computed_when_missing():
     holes = {h.hole: h for h in result.rounds[0].holes}
     assert holes[1].score_type == "BIRDIE"
     assert holes[2].score_type == "DOUBLE_BOGEY"
+
+
+def test_non_numeric_hole_value_does_not_crash():
+    """ESPN returns '--' for holes not yet played in a partial round."""
+    data = {
+        "items": [
+            {
+                "period": 1,
+                "displayValue": "-3",
+                "linescores": [
+                    {"period": 1, "value": 3.0, "par": 4, "scoreType": {"name": "BIRDIE"}},
+                    {"period": 2, "value": "--", "par": 5},   # not yet played
+                    {"period": 3, "value": None, "par": 4},   # also not yet played
+                ],
+            }
+        ]
+    }
+    result = _parse("999", data)
+    holes = {h.hole: h for h in result.rounds[0].holes}
+    assert holes[1].strokes == 3
+    assert holes[2].strokes is None
+    assert holes[3].strokes is None
