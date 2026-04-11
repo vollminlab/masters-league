@@ -19,6 +19,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 
 from espn import fetch_players
+from scorecard import fetch_scorecard, ScorecardData
 from scoring import compute_leaderboard
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -72,6 +73,62 @@ async def get_leaderboard() -> JSONResponse:
             logger.warning("Redis write error: %s", exc)
 
     return JSONResponse(content=payload)
+
+
+@app.get("/api/scorecard/{player_id}")
+async def get_scorecard(player_id: str) -> JSONResponse:
+    cache_key = f"masters:scorecard:{player_id}:v1"
+
+    if _redis:
+        try:
+            cached = await _redis.get(cache_key)
+            if cached:
+                return JSONResponse(content=json.loads(cached))
+        except Exception as exc:
+            logger.warning("Redis read error: %s", exc)
+
+    try:
+        data = await fetch_scorecard(player_id)
+    except Exception as exc:
+        logger.error("Scorecard fetch failed for %s: %s", player_id, exc)
+        return JSONResponse(status_code=503, content={"error": "Scorecard unavailable"})
+
+    payload = _serialize_scorecard(data)
+
+    if _redis:
+        try:
+            await _redis.setex(cache_key, 60, json.dumps(payload))
+        except Exception as exc:
+            logger.warning("Redis write error: %s", exc)
+
+    return JSONResponse(content=payload)
+
+
+def _serialize_scorecard(data: ScorecardData) -> dict:
+    return {
+        "player_id": data.player_id,
+        "current_round": data.current_round,
+        "rounds": [
+            {
+                "round": r.round,
+                "started": r.started,
+                "to_par_display": r.to_par_display,
+                "out": r.out,
+                "in": r.in_,
+                "total": r.total,
+                "holes": [
+                    {
+                        "hole": h.hole,
+                        "par": h.par,
+                        "strokes": h.strokes,
+                        "score_type": h.score_type,
+                    }
+                    for h in r.holes
+                ],
+            }
+            for r in data.rounds
+        ],
+    }
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
