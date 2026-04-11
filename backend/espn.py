@@ -27,6 +27,7 @@ class ESPNPlayer:
     is_withdrawn: bool
     round_scores: list[Optional[int]] = field(default_factory=list)
     round_scores_display: list[str] = field(default_factory=list)  # "-5", "E", "+2" per round
+    player_id: str = ""
 
 
 def normalize_name(name: str) -> str:
@@ -71,6 +72,8 @@ def _parse_competitor(comp: dict) -> Optional[ESPNPlayer]:
         name = comp.get("athlete", {}).get("displayName", "").strip()
         if not name:
             return None
+
+        player_id = str(comp.get("id", ""))
 
         status = comp.get("status", {})
         stype = status.get("type", {})
@@ -149,6 +152,7 @@ def _parse_competitor(comp: dict) -> Optional[ESPNPlayer]:
             is_withdrawn=is_wd,
             round_scores=round_scores,
             round_scores_display=round_scores_display,
+            player_id=player_id,
         )
     except Exception:
         logger.exception("Failed to parse competitor: %s", comp.get("athlete", {}).get("displayName"))

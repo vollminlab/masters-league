@@ -26,6 +26,7 @@ class GolferResult:
     is_withdrawn: bool
     is_counting: bool = False
     round_scores_display: list[str] = field(default_factory=list)
+    player_id: str = ""
 
 
 @dataclass
@@ -88,6 +89,7 @@ def _compute_team(
                 is_cut=espn.is_cut,
                 is_withdrawn=espn.is_withdrawn,
                 round_scores_display=espn.round_scores_display,
+                player_id=espn.player_id,
             ))
         else:
             # Player not yet in ESPN feed (pre-tournament or name mismatch)

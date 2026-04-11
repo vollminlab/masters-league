@@ -106,6 +106,7 @@ async def _build_payload() -> dict[str, Any]:
                     "is_withdrawn": g.is_withdrawn,
                     "is_counting": g.is_counting,
                     "round_scores_display": g.round_scores_display,
+                    "player_id": g.player_id,
                 }
                 for g in t.golfers
             ],
