@@ -41,8 +41,8 @@ export default function TeamCard({ team, isTied = false }: { team: TeamResult; i
     ? `T${position}`
     : (position ?? '–')
 
-  function toggleGolfer(name: string) {
-    setExpandedGolfer(prev => prev === name ? null : name)
+  function toggleGolfer(playerId: string) {
+    setExpandedGolfer(prev => prev === playerId ? null : playerId)
   }
 
   return (
@@ -124,10 +124,10 @@ export default function TeamCard({ team, isTied = false }: { team: TeamResult; i
           <div key={g.name}>
             <GolferRow
               golfer={g}
-              isExpanded={expandedGolfer === g.name}
-              onToggle={() => toggleGolfer(g.name)}
+              isExpanded={expandedGolfer === g.player_id}
+              onToggle={() => toggleGolfer(g.player_id)}
             />
-            {expandedGolfer === g.name && g.player_id && (
+            {expandedGolfer === g.player_id && g.player_id && (
               <ScorecardPanel playerId={g.player_id} />
             )}
           </div>
@@ -156,7 +156,7 @@ function GolferRow({
   return (
     <div
       onClick={clickable ? onToggle : undefined}
-      className={`px-4 py-2 flex items-center text-sm gap-1 transition-opacity ${
+      className={`px-4 py-2 flex items-center text-sm gap-1 transition-opacity transition-colors ${
         inactive ? 'opacity-35' : ''
       } ${clickable ? 'cursor-pointer hover:bg-white/[0.03]' : ''} ${
         isExpanded ? 'bg-white/[0.04]' : ''
