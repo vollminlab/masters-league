@@ -2,6 +2,7 @@
 
 Serves:
   GET /api/leaderboard  — computed fantasy leaderboard (Redis-cached, 30s TTL)
+  GET /api/scorecard/{player_id}  — hole-by-hole scorecard (Redis-cached, 60s TTL)
   GET /api/health       — liveness probe
   GET /*                — React SPA static files
 """
@@ -27,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 CACHE_TTL = int(os.getenv("CACHE_TTL", "30"))
+SCORECARD_CACHE_TTL = int(os.getenv("SCORECARD_CACHE_TTL", "60"))
 STATIC_DIR = Path(__file__).parent / "static"
 CACHE_KEY = "masters:leaderboard:v1"
 
@@ -97,7 +99,7 @@ async def get_scorecard(player_id: str) -> JSONResponse:
 
     if _redis:
         try:
-            await _redis.setex(cache_key, 60, json.dumps(payload))
+            await _redis.setex(cache_key, SCORECARD_CACHE_TTL, json.dumps(payload))
         except Exception as exc:
             logger.warning("Redis write error: %s", exc)
 
