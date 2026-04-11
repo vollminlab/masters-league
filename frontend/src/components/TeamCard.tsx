@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import type { GolferResult, TeamResult } from '../types'
+import ScorecardPanel from './ScorecardPanel'
 
 const TOTAL_ROUNDS = 4
 
@@ -31,12 +33,17 @@ function rankColor(pos: number | null, dq: boolean): string {
 export default function TeamCard({ team, isTied = false }: { team: TeamResult; isTied?: boolean }) {
   const { counting_score_display: scoreDisplay, disqualified, position } = team
   const isLeader = position === 1 && !disqualified
+  const [expandedGolfer, setExpandedGolfer] = useState<string | null>(null)
 
   const posDisplay = disqualified
     ? 'DQ'
     : isTied && position
     ? `T${position}`
     : (position ?? '–')
+
+  function toggleGolfer(name: string) {
+    setExpandedGolfer(prev => prev === name ? null : name)
+  }
 
   return (
     <div
@@ -114,7 +121,16 @@ export default function TeamCard({ team, isTied = false }: { team: TeamResult; i
       {/* ── Golfer rows ── */}
       <div className="divide-y divide-gray-800/40 pb-1">
         {team.golfers.map(g => (
-          <GolferRow key={g.name} golfer={g} />
+          <div key={g.name}>
+            <GolferRow
+              golfer={g}
+              isExpanded={expandedGolfer === g.name}
+              onToggle={() => toggleGolfer(g.name)}
+            />
+            {expandedGolfer === g.name && g.player_id && (
+              <ScorecardPanel playerId={g.player_id} />
+            )}
+          </div>
         ))}
       </div>
     </div>
@@ -123,15 +139,27 @@ export default function TeamCard({ team, isTied = false }: { team: TeamResult; i
 
 // ── Golfer row ────────────────────────────────────────────────────────────────
 
-function GolferRow({ golfer }: { golfer: GolferResult }) {
+function GolferRow({
+  golfer,
+  isExpanded,
+  onToggle,
+}: {
+  golfer: GolferResult
+  isExpanded: boolean
+  onToggle: () => void
+}) {
   const inactive = golfer.is_cut || golfer.is_withdrawn
   const rounds = golfer.round_scores_display ?? []
   const paddedRounds = [...rounds, ...Array(Math.max(0, TOTAL_ROUNDS - rounds.length)).fill('')]
+  const clickable = Boolean(golfer.player_id) && !inactive
 
   return (
     <div
+      onClick={clickable ? onToggle : undefined}
       className={`px-4 py-2 flex items-center text-sm gap-1 transition-opacity ${
         inactive ? 'opacity-35' : ''
+      } ${clickable ? 'cursor-pointer hover:bg-white/[0.03]' : ''} ${
+        isExpanded ? 'bg-white/[0.04]' : ''
       }`}
     >
       {/* Counting dot / status icon */}
@@ -162,6 +190,11 @@ function GolferRow({ golfer }: { golfer: GolferResult }) {
         }`}
       >
         {golfer.name}
+        {clickable && (
+          <span className={`ml-1 text-gray-700 text-xs transition-transform inline-block ${isExpanded ? 'rotate-180' : ''}`}>
+            ▾
+          </span>
+        )}
       </div>
 
       {/* Round scores */}
