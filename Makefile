@@ -1,5 +1,5 @@
 REGISTRY := harbor.vollminlab.com
-PROJECT  := homelab
+PROJECT  := vollminlab
 IMAGE    := masters-league
 TAG      := v1.1.1
 FULL     := $(REGISTRY)/$(PROJECT)/$(IMAGE):$(TAG)
