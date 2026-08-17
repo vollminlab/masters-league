@@ -208,13 +208,19 @@ stroke values. `score_type` is taken from ESPN when present and otherwise derive
 | Data | URL | Configurable |
 |---|---|---|
 | Leaderboard | `https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga` | `ESPN_URL` |
-| Scorecard | `https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/401811941/competitions/401811941/competitors/{player_id}/linescores` | **no** — hardcoded in `backend/scorecard.py` |
+| Scorecard | `https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/$ESPN_EVENT_ID/competitions/$ESPN_EVENT_ID/competitors/{player_id}/linescores` | `ESPN_EVENT_ID` |
 
-**The two sources disagree about which tournament it is.** The leaderboard endpoint has no event
-filter — `fetch_players` simply takes `events[0]`, whatever PGA event ESPN lists first. The
-scorecard endpoint is pinned to event `401811941`. During Masters week they agree; outside it, the
-leaderboard tracks some other tournament while scorecards still resolve against the Masters. That
-event ID is the one line that must change to run this for another year.
+**Both sources read the same `ESPN_EVENT_ID`**, so the leaderboard and the hole-by-hole view can
+never describe different tournaments. `fetch_players` selects the matching event out of the feed,
+falling back to `events[0]` with a warning if ESPN has dropped it from the list — which is what
+eventually happens once a tournament is well in the past.
+
+**To run this for another year, set `ESPN_EVENT_ID` on the Deployment to the new event id.** That is
+the whole change; nothing else is year-specific.
+
+> Before [#6](https://github.com/vollminlab/masters-league/pull/6) the scorecard URL had the event
+> hardcoded while the leaderboard took `events[0]`, so outside Masters week the two silently tracked
+> different tournaments.
 
 Parsing notes worth keeping in mind when the feed shifts:
 
@@ -309,6 +315,7 @@ All backend configuration is environment variables read at import time in `backe
 | `CACHE_TTL` | `30` | Leaderboard cache TTL in seconds. Also echoed to the client as `cache_ttl`. |
 | `SCORECARD_CACHE_TTL` | `60` | Scorecard cache TTL in seconds. **Not set in the Deployment** — the cluster runs the default. |
 | `ESPN_URL` | `https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga` | Leaderboard source. |
+| `ESPN_EVENT_ID` | `401811941` | ESPN's tournament id. Read by both the leaderboard and the scorecard endpoint. **The one value to change each year.** |
 
 There is no environment variable for the scorecard URL, and none for the draft — both are code.
 
@@ -333,7 +340,6 @@ maintained by hand and must be kept in step.
 | `debug-espn` | Runs `espn.fetch_players()` inside the app pod and prints the first three entries |
 | `dev-backend` | Installs requirements and runs uvicorn on `:8000` with `--reload` |
 | `dev-frontend` | `npm install && npm run dev` |
-| `create-pull-secret` | **Stale.** Pipes a docker-registry Secret through `kubeseal`. The sealed-secrets controller was removed from the cluster on 2026-05-31; the pull secret now comes from the `harbor-vollminlab-pull` ExternalSecret. Do not use. |
 | `help` | Default goal — prints the `##` comments |
 
 ---
