@@ -1,6 +1,7 @@
 """Hole-by-hole scorecard fetcher from ESPN."""
 
 import logging
+import os
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -8,9 +9,16 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+# ESPN's id for the tournament. This is the one value that has to change from
+# one year to the next — leaving it hardcoded meant the scorecard endpoint kept
+# serving last year's event while the leaderboard followed whatever ESPN listed
+# first, so outside tournament week the two described different tournaments.
+EVENT_ID = os.getenv("ESPN_EVENT_ID", "401811941")
+
 SCORECARD_URL = (
     "https://sports.core.api.espn.com/v2/sports/golf/leagues/pga"
-    "/events/401811941/competitions/401811941/competitors/{player_id}/linescores"
+    f"/events/{EVENT_ID}/competitions/{EVENT_ID}"
+    "/competitors/{player_id}/linescores"
 )
 
 
