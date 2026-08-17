@@ -15,6 +15,10 @@ ESPN_URL = os.getenv(
     "https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga",
 )
 
+# Kept in step with scorecard.EVENT_ID — both read the same variable so the
+# leaderboard and the hole-by-hole view can never drift onto different events.
+EVENT_ID = os.getenv("ESPN_EVENT_ID", "401811941")
+
 
 @dataclass
 class ESPNPlayer:
@@ -49,8 +53,17 @@ async def fetch_players() -> dict[str, "ESPNPlayer"]:
         logger.warning("ESPN returned no events")
         return players
 
-    # Use the first event (current/most recent tournament)
-    event = events[0]
+    # Prefer the configured tournament so the leaderboard and the scorecard
+    # endpoint always describe the same event. ESPN only lists the Masters
+    # first during Masters week; the rest of the year events[0] is whatever
+    # PGA event is current, which silently disagreed with the scorecard URL.
+    event = next((e for e in events if str(e.get("id")) == EVENT_ID), None)
+    if event is None:
+        event = events[0]
+        logger.warning(
+            "ESPN event %s not in the leaderboard feed; falling back to %s (%s)",
+            EVENT_ID, event.get("id"), event.get("name", "unknown"),
+        )
     logger.info("ESPN event: %s", event.get("name", "unknown"))
 
     competitions = event.get("competitions", [])
