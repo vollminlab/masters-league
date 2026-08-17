@@ -1,30 +1,18 @@
 # Deployment Checklist — Masters League 2026
 
-## 0. Harbor setup (one-time)
+## 0. Harbor pull secret
 
-### Option A — Make the project public (simplest, fine for internal Harbor)
+Nothing to do — this is already wired up and needs no per-deploy action.
 
-1. Log into `harbor.vollminlab.com`
-2. Create project **`homelab`** if it doesn't exist (New Project → name: `homelab`)
-3. Go to the project → Configuration → toggle **Public** ON
-4. Skip the pull secret steps below — no auth needed for pull
+The Deployment references the `harbor-vollminlab-pull` image pull secret, which the
+External Secrets Operator materializes from 1Password. It lives in the cluster repo at
+`clusters/vollminlab-cluster/dmz/masters-league/app/harbor-vollminlab-pull-externalsecret.yaml`.
 
-### Option B — Private project with a robot account
-
-1. Create project `homelab` (private)
-2. In the project → Robot Accounts → New Robot Account
-   - Name: `masters-league`, expiry: 30 days, permission: **Pull** on the homelab project
-   - Copy the generated token
-3. Create and seal the pull secret:
-
-   ```bash
-   cd /home/vollmin/repos/vollminlab/masters-league
-   export HARBOR_USER="robot\$masters-league"
-   export HARBOR_TOKEN="<paste token here>"
-   make create-pull-secret
-   ```
-
-4. Add `- harbor-pull-sealedsecret.yaml` to `app/kustomization.yaml` resources, then commit.
+> Earlier revisions of this checklist described sealing a pull secret with `kubeseal` via
+> `make create-pull-secret`. The sealed-secrets controller was removed on 2026-05-31 and
+> every secret in the cluster now comes from 1Password through ESO, so that path no longer
+> works. Rotating the Harbor robot credential means updating the 1Password item — the
+> cluster picks it up on the ExternalSecret's next refresh.
 
 ## 1. Build & push the image
 

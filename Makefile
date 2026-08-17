@@ -76,25 +76,6 @@ debug-espn:  ## Hit the ESPN API directly from inside the app pod
 
 # ── Dev ───────────────────────────────────────────────────────────────────────
 
-.PHONY: create-pull-secret
-create-pull-secret:  ## Seal a Harbor pull secret (run once; needs HARBOR_USER and HARBOR_TOKEN env vars)
-	@test -n "$(HARBOR_USER)" || (echo "Set HARBOR_USER=robot\$$masters-league" && exit 1)
-	@test -n "$(HARBOR_TOKEN)" || (echo "Set HARBOR_TOKEN=<robot-account-token>" && exit 1)
-	kubectl create secret docker-registry harbor-pull-secret \
-		--docker-server=$(REGISTRY) \
-		--docker-username=$(HARBOR_USER) \
-		--docker-password=$(HARBOR_TOKEN) \
-		--namespace=$(NAMESPACE) \
-		--dry-run=client -o yaml \
-	| kubeseal --fetch-cert \
-		--controller-namespace sealed-secrets \
-		--controller-name sealed-secrets-controller \
-	| kubeseal --format yaml \
-		--controller-namespace sealed-secrets \
-		--controller-name sealed-secrets-controller \
-	> $(CURDIR)/../k8s-vollminlab-cluster/clusters/vollminlab-cluster/dmz/masters-league/app/harbor-pull-sealedsecret.yaml
-	@echo "Sealed secret written. Add it to app/kustomization.yaml resources, then commit."
-
 .PHONY: dev-backend
 dev-backend:  ## Run backend locally (requires Redis on localhost:6379)
 	cd backend && pip install -r requirements.txt -q && \
