@@ -1,0 +1,26 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  // Conventions match vollminlab/k8s-vollminlab-cluster so dependency PRs look the
+  // same across the org: same quiet-hours schedule, same labels, same commit prefix.
+  "timezone": "America/New_York",
+  "schedule": ["after 10pm every weekday", "before 5am every weekday", "every weekend"],
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 10,
+  "labels": ["renovate", "dependencies"],
+  "commitMessagePrefix": "chore(deps):",
+  // This repo builds an image that runs in the homelab cluster. Until 2026-08-20 no
+  // Renovate or Dependabot config existed here and the self-hosted Renovate ran with
+  // autodiscover: false against a repositories list naming only the cluster repo, so
+  // nothing here had ever been offered a dependency update.
+  "enabledManagers": ["pip_requirements", "npm", "dockerfile", "github-actions"],
+  "packageRules": [
+    {
+      // frontend/ pulls in a large transitive tree. One PR per package would bury the
+      // Python and image updates that actually matter here, so non-majors ride together.
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "npm non-major"
+    }
+  ]
+}
