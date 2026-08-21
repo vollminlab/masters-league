@@ -23,13 +23,27 @@ jobs:
       # uses -- rather than actions/setup-python. The dependency set is then the one
       # that actually ships, and it avoids relying on a Python toolchain being
       # present on a self-hosted runner (this fleet's image has python3 with no pip).
+      # Built as an image rather than `docker run -v $PWD/backend:...`: the runner
+      # talks to a separate dockerd (dind), so a bind mount of the workspace resolves
+      # against THAT daemon's filesystem and silently yields an empty directory. A
+      # build context is uploaded over the API and therefore works. `RUN pytest` makes
+      # a test failure fail the build, and so the step.
       - name: Run backend tests against the image's base
         run: |
           set -euo pipefail
           base=$(grep -m1 'FROM python' Dockerfile | awk '{print $2}')
           echo "testing against $base"
-          docker run --rm -v "$PWD/backend:/src:ro" -w /src "$base" \
-            sh -c 'pip install --quiet --no-cache-dir -r requirements.txt pytest && pytest -q'
+          tf=$(mktemp)
+          {
+            echo "FROM $base"
+            echo "WORKDIR /src"
+            echo "COPY requirements.txt ."
+            echo "RUN pip install --quiet --no-cache-dir -r requirements.txt pytest"
+            echo "COPY . ."
+            echo "RUN pytest -q"
+          } > "$tf"
+          docker build --no-cache -f "$tf" -t ci-backend-tests:${{ github.sha }} backend
+          rm -f "$tf"
 
   docker-build:
     name: Docker Build
