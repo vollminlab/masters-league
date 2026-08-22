@@ -4,3 +4,6 @@ backend/__pycache__/
 backend/static/
 *.pyc
 .env
+
+# git worktrees used during development
+.worktrees/
