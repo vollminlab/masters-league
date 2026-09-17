@@ -8,7 +8,7 @@ RUN npm run build
 # Output at /app/dist
 
 # Stage 2 — Python backend serving the built frontend
-FROM python:3.12-slim
+FROM python:3.14-slim
 WORKDIR /app
 
 # Install dependencies
