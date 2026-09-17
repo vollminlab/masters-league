@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ vars.CI_RUNNER || 'vollminlab' }}
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # Run inside python:3.12-slim -- the same base the Dockerfile's runtime stage
       # uses -- rather than actions/setup-python. The dependency set is then the one
@@ -50,7 +50,7 @@ jobs:
     runs-on: ${{ vars.CI_RUNNER || 'vollminlab' }}
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # The Dockerfile is multi-stage, so this one build also type-checks and bundles
       # the frontend (`tsc && vite build` in the node stage). A TypeScript error or a
